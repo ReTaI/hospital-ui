@@ -1,9 +1,12 @@
 import React, { useState, memo } from "react";
 import { Form, Button } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 
 const Authorization = () => {
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleLoginChange = (event) => {
     setLogin(event.target.value);
@@ -12,7 +15,14 @@ const Authorization = () => {
     setPassword(event.target.value);
   };
   const handleSignin = () => {
-    console.log(login, password);
+    if (!(login && password)) {
+      setError("Wrong password or login");
+      return;
+    }
+    navigate("/main");
+  };
+  const handleNurse = () => {
+    navigate("/main");
   };
 
   return (
@@ -24,7 +34,7 @@ const Authorization = () => {
         height: "100vh",
       }}
     >
-      <Form>
+      <Form style={{ width: "30%" }}>
         <Form.Group className="mb-3" controlId="formBasicEmail">
           <Form.Label>Введите логин:</Form.Label>
           <Form.Control
@@ -46,9 +56,16 @@ const Authorization = () => {
             style={{ background: "#F9F9F9" }}
           />
         </Form.Group>
-        <Button variant="primary" type="button" onClick={handleSignin}>
-          Войти
-        </Button>
+        <div style={{ color: "red", paddingBottom: 15 }}>{error}</div>
+        <div style={{ display: "flex" }}>
+          <Button variant="primary" type="button" onClick={handleNurse}>
+            Войти как медсестра
+          </Button>
+          <div style={{ width: "48%" }} />
+          <Button variant="primary" type="button" onClick={handleSignin}>
+            Войти
+          </Button>
+        </div>
       </Form>
     </div>
   );

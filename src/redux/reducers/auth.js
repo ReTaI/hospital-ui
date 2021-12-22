@@ -8,9 +8,14 @@ const initialState = {
 export default function authReducer(state = initialState, action) {
   switch (action.type) {
     case LOGIN:
-      return { ...state, role: action.role, address: action.address };
+      return {
+        ...state,
+        role: action.role,
+        login: action.login,
+        fullname: action.fullname,
+      };
     case LOGOUT:
-      return { ...state, role: -1, address: null };
+      return { ...state, role: -1, login: "", fullname: "" };
     default:
       return state;
   }
