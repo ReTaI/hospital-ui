@@ -1,18 +1,17 @@
-import React, { memo, useState } from "react";
+import React, { memo, useState, useEffect } from "react";
 import { Table, Form, Button } from "react-bootstrap";
 
-import { users } from "../../api";
 import Header from "../../components/Header";
 
 const MainAdmin = () => {
-  // const { fullname } = useSelector((store) => store.authReducer);
   const [fullname, setFullname] = useState("");
   const [position, setPosition] = useState("");
   const [address, setAddress] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [curId, setCurId] = useState(0);
-  const [currentUsers, setcurrentUsers] = useState([...users]);
+  const [currentUsers, setCurrentUsers] = useState([]);
+  const [error, setError] = useState('');
 
   const handleFullnameChange = (event) => {
     setFullname(event.target.value);
@@ -30,27 +29,82 @@ const MainAdmin = () => {
     setPhone(event.target.value);
   };
 
+  useEffect(() => {
+    fetch("http://localhost:3000/users")
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Не удалось получить данные");
+        }
+        return response;
+      })
+      .then((res) => res.json())
+      .then((data) => {
+        setCurrentUsers(data);
+      })
+      .catch((error) => setError(error.toString()));
+  }, []);
+
   const handleEdit = async (event) => {
-    event.preventDefault();
     await setCurId(+event.target.dataset.id);
-    setFullname(currentUsers[curId].fullname);
-    setPosition(currentUsers[curId].position);
-    setAddress(currentUsers[curId].address);
-    setEmail(currentUsers[curId].email);
-    setPhone(currentUsers[curId].phone);
+    setFullname(currentUsers[+event.target.dataset.id-1].fullname);
+    setPosition(currentUsers[+event.target.dataset.id-1].position);
+    setAddress(currentUsers[+event.target.dataset.id-1].address);
+    setEmail(currentUsers[+event.target.dataset.id-1].email);
+    setPhone(currentUsers[+event.target.dataset.id-1].phone);
   };
 
   const handleSave = () => {
-    currentUsers[curId].fullname = fullname;
-    currentUsers[curId].position = position;
-    currentUsers[curId].address = address;
-    currentUsers[curId].email = email;
-    currentUsers[curId].phone = phone;
-    setcurrentUsers(currentUsers);
-    console.log(currentUsers);
+    if (!(fullname && position && address && email && phone)) {
+      setError('Поля не могут быть пустыми');
+      return;
+    }
+    fetch("http://localhost:3000/users/edit", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json;charset=utf-8",
+      },
+      body: JSON.stringify({
+        fullname,
+        address,
+        email,
+        phone,
+        position,
+        id: curId,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Не удалось отредактировать данные");
+        }
+        return response;
+      })
+      .then((res) => res.json())
+      .then((data) => {
+        setCurrentUsers(data);
+        setFullname("");
+        setPosition("");
+        setEmail("");
+        setPhone("");
+        setAddress("");
+        setError("");
+      })
+      .catch((error) => setError(error.toString()));
   };
   const handleDelete = (event) => {
-    event.preventDefault();
+    fetch(`http://localhost:3000/users/delete/${event.target.dataset.id}`, {
+      method: "DELETE",
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Ошибка удаления");
+        }
+        return response;
+      })
+      .then((res) => res.json())
+      .then((data) => {
+        setCurrentUsers(data);
+      })
+      .catch((error) => setError(error.toString()));
   };
   return (
     <>
@@ -117,6 +171,7 @@ const MainAdmin = () => {
                 style={{ background: "#F9F9F9" }}
               />
             </Form.Group>
+            <div style={{ color: "red", paddingBottom: 15 }}>{error}</div>
 
             <Button variant="primary" type="button" onClick={handleSave}>
               Сохранить
@@ -134,20 +189,20 @@ const MainAdmin = () => {
               </tr>
             </thead>
             <tbody>
-              {users.map((person) => {
+              {currentUsers?.map((person) => {
                 return (
                   <tr key={person.id}>
                     <td>{person.fullname}</td>
                     <td>{person.position}</td>
                     <td>
-                      <a href="#" onClick={handleEdit} data-id={person.id}>
+                      <Button href="#" onClick={handleEdit} data-id={person.id}>
                         Редактировать
-                      </a>
+                      </Button>
                     </td>
                     <td>
-                      <a href="#" onClick={handleDelete} data-id={person.id}>
+                      <Button href="#" onClick={handleDelete} data-id={person.id} variant='danger'>
                         Удалить
-                      </a>
+                      </Button>
                     </td>
                   </tr>
                 );

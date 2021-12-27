@@ -1,20 +1,36 @@
 import React, { memo, useState } from "react";
+import { useEffect } from "react";
 import { Table, Form, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-
-import { patients } from "../../api";
 import Header from "../../components/Header";
 
 const MainUser = () => {
   const navigate = useNavigate();
+  const currentRole = localStorage.getItem("role");
 
   const [fullname, setFullname] = useState("");
   const [doctor, setDoctor] = useState("");
-  const [room, setRoom] = useState(-1);
+  const [room, setRoom] = useState("");
   const [dateStart, setDateStart] = useState("");
   const [dateEnd, setDateEnd] = useState("");
   const [curId, setCurId] = useState(0);
-  const [currentPatients, setCurrentPatients] = useState([...patients]);
+  const [currentPatients, setCurrentPatients] = useState([]);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch("http://localhost:3000/patients")
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Не удалось получить данные");
+        }
+        return response;
+      })
+      .then((res) => res.json())
+      .then((data) => {
+        setCurrentPatients(data);
+      })
+      .catch((error) => setError(error.toString()));
+  }, []);
 
   const handleFullnameChange = (event) => {
     setFullname(event.target.value);
@@ -33,22 +49,50 @@ const MainUser = () => {
   };
 
   const handleEdit = async (event) => {
-    await setCurId(+event.target.dataset.id);
-    setFullname(currentPatients[curId].fullname);
-    setDoctor(currentPatients[curId].doctor);
-    setRoom(currentPatients[curId].room);
-    setDateStart(currentPatients[curId].dateStart);
-    setDateEnd(currentPatients[curId].dateEnd);
+    await setCurId(+event.target.dataset.id - 1);
+    setFullname(currentPatients[+event.target.dataset.id - 1].fullname);
+    setDoctor(currentPatients[+event.target.dataset.id - 1].doctor);
+    setRoom(currentPatients[+event.target.dataset.id - 1].room);
+    setDateStart(currentPatients[+event.target.dataset.id - 1].dateStart);
+    setDateEnd(currentPatients[+event.target.dataset.id - 1].dateEnd);
   };
 
   const handleSave = () => {
-    currentPatients[curId].fullname = fullname;
-    currentPatients[curId].doctor = doctor;
-    currentPatients[curId].room = room;
-    currentPatients[curId].dateStart = dateStart;
-    currentPatients[curId].dateEnd = dateEnd;
-    setCurrentPatients(currentPatients);
-    console.log(currentPatients);
+    if (!(fullname && doctor && room && dateStart)) {
+      setError("Поля не могут быть пустыми");
+      return;
+    }
+    fetch("http://localhost:3000/patients/edit", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json;charset=utf-8",
+      },
+      body: JSON.stringify({
+        fullname,
+        doctor,
+        room,
+        dateStart,
+        dateEnd,
+        id: curId + 1,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Не удалось отредактировать данные");
+        }
+        return response;
+      })
+      .then((res) => res.json())
+      .then((data) => {
+        setCurrentPatients(data);
+        setFullname("");
+        setDoctor("");
+        setRoom("");
+        setDateStart("");
+        setDateEnd("");
+        setError("");
+      })
+      .catch((error) => setError(error.toString()));
   };
 
   const handleNewPatient = () => {
@@ -57,7 +101,7 @@ const MainUser = () => {
 
   return (
     <>
-      <Header />
+      <Header fullename={localStorage.getItem("fullname")} />
       <div style={{ display: "flex", marginTop: 20 }}>
         <div style={{ width: 1600 }}>
           <Table>
@@ -69,7 +113,6 @@ const MainUser = () => {
                 <td>Дата обращения</td>
                 <td>Дата выписки</td>
                 <td>Палата</td>
-                <td></td>
                 <td></td>
               </tr>
             </thead>
@@ -98,9 +141,6 @@ const MainUser = () => {
                         />
                       </Button>
                     </td>
-                    <td>
-                      <a href={"history/" + person.id}>подробнее</a>
-                    </td>
                   </tr>
                 );
               })}
@@ -125,6 +165,7 @@ const MainUser = () => {
                 onChange={handleFullnameChange}
                 value={fullname}
                 style={{ background: "#F9F9F9" }}
+                disabled={currentRole}
               />
             </Form.Group>
 
@@ -135,6 +176,7 @@ const MainUser = () => {
                 onChange={handleDoctorChange}
                 value={doctor}
                 style={{ background: "#F9F9F9" }}
+                disabled={currentRole}
               />
             </Form.Group>
 
@@ -145,6 +187,7 @@ const MainUser = () => {
                 onChange={handleRoomChange}
                 value={room}
                 style={{ background: "#F9F9F9" }}
+                disabled={currentRole}
               />
             </Form.Group>
 
@@ -155,6 +198,7 @@ const MainUser = () => {
                 onChange={handleDateStartChange}
                 value={dateStart}
                 style={{ background: "#F9F9F9" }}
+                disabled={currentRole}
               />
             </Form.Group>
 
@@ -165,10 +209,17 @@ const MainUser = () => {
                 onChange={handleDateEndChange}
                 value={dateEnd}
                 style={{ background: "#F9F9F9" }}
+                disabled={currentRole}
               />
             </Form.Group>
+            <div style={{ color: "red", paddingBottom: 15 }}>{error}</div>
 
-            <Button variant="primary" type="button" onClick={handleSave}>
+            <Button
+              variant="primary"
+              type="button"
+              onClick={handleSave}
+              disabled={currentRole}
+            >
               Сохранить
             </Button>
 
@@ -177,6 +228,7 @@ const MainUser = () => {
               type="button"
               onClick={handleNewPatient}
               style={{ display: "block", marginTop: 150, marginLeft: 120 }}
+              disabled={currentRole}
             >
               Добавить пациента
             </Button>

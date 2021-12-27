@@ -16,12 +16,35 @@ const Authorization = () => {
   };
   const handleSignin = () => {
     if (!(login && password)) {
-      setError("Wrong password or login");
+      setError("Введите всю информацию");
       return;
     }
-    navigate("/main");
+    fetch("http://localhost:3000/users/signin", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json;charset=utf-8",
+      },
+      body: JSON.stringify({
+        login: login,
+        password: password,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Неправильное имя пользователя или пароль');
+        }
+        return response;
+      })
+      .then((res) => res.json())
+      .then((data) => {
+        localStorage.setItem("fullname", data.fullname);
+        localStorage.setItem("role", data.role);
+        navigate(data.role === 2 ? '/main/admin' : '/main');
+      })
+      .catch((error) => setError(error.toString()));
   };
   const handleNurse = () => {
+    localStorage.setItem('role', 0);
     navigate("/main");
   };
 

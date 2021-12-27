@@ -2,7 +2,6 @@ import React, { memo, useState } from "react";
 import { Table, Form, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
-import { patients } from "../api";
 import Header from "../components/Header";
 
 const AddPatient = () => {
@@ -10,11 +9,11 @@ const AddPatient = () => {
 
   const [fullname, setFullname] = useState("");
   const [doctor, setDoctor] = useState("");
-  const [room, setRoom] = useState(-1);
+  const [room, setRoom] = useState('');
   const [dateStart, setDateStart] = useState("");
   const [insurance, setInsurance] = useState("");
   const [curId, setCurId] = useState(0);
-  const [currentPatients, setCurrentPatients] = useState([...patients]);
+  const [error, setError] = useState('');
 
   const handleFullnameChange = (event) => {
     setFullname(event.target.value);
@@ -33,8 +32,38 @@ const AddPatient = () => {
   };
 
   const handleSave = () => {
-    currentPatients.push({ fullname, doctor, room, dateStart, insurance });
-    setCurrentPatients(currentPatients);
+    if (!(fullname && doctor && room && dateStart && insurance)) {
+      setError('Поля не могут быть пустыми');
+      return;
+    }
+    fetch("http://localhost:3000/patients/add", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json;charset=utf-8",
+      },
+      body: JSON.stringify({
+        fullname,
+        doctor,
+        room,
+        dateStart,
+        insurance,
+      })
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Не удалось отредактировать данные");
+        }
+        return response;
+      })
+      .then((res) => res.json())
+      .then(() => {
+        setFullname('');
+        setDoctor('');
+        setDateStart('');
+        setInsurance('');
+        setRoom('');
+      })
+      .catch((error) => setError(error.toString()));
   };
 
   const handleBack = () => {
@@ -105,6 +134,7 @@ const AddPatient = () => {
               style={{ background: "#F9F9F9" }}
             />
           </Form.Group>
+          <div style={{ color: "red", paddingBottom: 15 }}>{error}</div>
 
           <div style={{ display: "flex", width: "100%" }}>
             <Button variant="danger" type="button" onClick={handleBack}>
