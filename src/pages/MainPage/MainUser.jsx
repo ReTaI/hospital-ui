@@ -6,7 +6,7 @@ import Header from "../../components/Header";
 
 const MainUser = () => {
   const navigate = useNavigate();
-  const currentRole = localStorage.getItem("role");
+  const currentRole = !(+localStorage.getItem("role"));
 
   const [fullname, setFullname] = useState("");
   const [doctor, setDoctor] = useState("");
@@ -101,7 +101,7 @@ const MainUser = () => {
 
   return (
     <>
-      <Header fullename={localStorage.getItem("fullname")} />
+      <Header fullname={localStorage.getItem("fullname")} />
       <div style={{ display: "flex", marginTop: 20 }}>
         <div style={{ width: 1600 }}>
           <Table>

@@ -3,6 +3,7 @@ import { Navbar, Container, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
 const Header = ({ fullname }) => {
+  console.log(fullname);
   const nav = useNavigate();
   const handleLogout = () => {
     localStorage.removeItem('fullname');

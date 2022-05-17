@@ -62,6 +62,7 @@ const AddPatient = () => {
         setDateStart('');
         setInsurance('');
         setRoom('');
+        navigate('/main');
       })
       .catch((error) => setError(error.toString()));
   };
@@ -72,7 +73,7 @@ const AddPatient = () => {
 
   return (
     <>
-      <Header />
+      <Header fullname={localStorage.getItem("fullname")} />
       <div
         style={{
           display: "flex",
